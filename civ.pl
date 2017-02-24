@@ -1,5 +1,13 @@
 #!/usr/bin/perl
 
+use strict;
+use Image::Magick;
+use MIME::Base64;
+use Getopt::Std;
+
+# -------------------------------- #
+# Version and Help Messages        #
+# -------------------------------- #
 $main::VERSION = "1.0.20170212";
 
 sub main::VERSION_MESSAGE{
@@ -23,21 +31,22 @@ Options:
 USAGE
 }
 
-use strict;
-use Image::Magick;
-use MIME::Base64;
-use Getopt::Std;
-
+# -------------------------------- #
+# Read commandline arguments       #
+# -------------------------------- #
 $Getopt::Std::STANDARD_HELP_VERSION = 1;
 my %Opts = (
 	d => 0,
 	g => 0,
 	c => 256,
-	w => 0,
-	h => 0
+	w => int(`tput cols`/2),
+	h => `tput lines`-1
 );
 exit main::HELP_MESSAGE() unless getopts('dgc:h:w:', \%Opts) && -f $ARGV[0];
 
+# -------------------------------- #
+# Load console color map           #
+# -------------------------------- #
 my %Map;
 my $map = new Image::Magick(magick=>"bmp");
 $map->BlobToImage(decode_base64(<DATA>));
@@ -47,16 +56,22 @@ for( my $i = 0; $i < scalar(@P); $i += 3 ){
 	$Map{sprintf "#%02x%02x%02x", map {int(255*$_/Image::Magick->QuantumRange)} @P[$i..$i+2]} = $i/3;
 }
 
+# -------------------------------- #
+# Read, process, and display image #
+# -------------------------------- #
 my $img = new Image::Magick;
 $img->Read($ARGV[0]);
-$img->Resize(geometry=>($Opts{w} || int(`tput cols`/2))."x".($Opts{h} || `tput lines`-1).">");
-$img->Grayscale() if $Opts{g};
-$img->Remap(image=>$map,dither=>$Opts{d});
 my ($W,$H) = $img->Get("width","height");
+if( $Opts{w}/$Opts{h} > $W/$H ){ $Opts{w} = int($Opts{h}*$W/$H);}
+else                           { $Opts{h} = int($Opts{w}*$H/$W);}
+$img->Resize(geometry=>2*$Opts{w}."x".$Opts{h}."!");
+$img->Quantize(colorspace=>'gray') if $Opts{g};
+$img->Remap(image=>$map,dither=>$Opts{d});
+($W,$H) = $img->Get("width","height");
 my @P = $img->GetPixels(geometry=>$W."x".$H);
 for( my $i = 0; $i < scalar(@P); $i += 3 ){
 	print "\e[0m\n" if $i/3 % $W == 0;
-	print "\e[48;5;".$Map{sprintf "#%02x%02x%02x", map {int(255*$_/Image::Magick->QuantumRange)} @P[$i..$i+2]}."m  ";
+	print "\e[48;5;".$Map{sprintf "#%02x%02x%02x", map {int(255*$_/Image::Magick->QuantumRange)} @P[$i..$i+2]}."m ";
 }
 print "\e[0m\n";
 exit;
