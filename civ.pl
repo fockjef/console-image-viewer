@@ -8,7 +8,7 @@ use Getopt::Std;
 # -------------------------------- #
 # Version and Help Messages        #
 # -------------------------------- #
-$main::VERSION = "1.0.20170212";
+$main::VERSION = "1.0.20170429";
 
 sub main::VERSION_MESSAGE{
 	print "CIV - Console Image Viewer v$main::VERSION\n";
@@ -42,7 +42,7 @@ my %Opts = (
 	w => int(`tput cols`/2),
 	h => `tput lines`-1
 );
-exit main::HELP_MESSAGE() unless getopts('dgc:h:w:', \%Opts) && -f $ARGV[0];
+exit main::HELP_MESSAGE() unless getopts('dgc:h:w:', \%Opts) && Image::Magick->new->Ping($ARGV[0]);
 
 # -------------------------------- #
 # Load console color map           #
@@ -51,9 +51,9 @@ my %Map;
 my $map = new Image::Magick(magick=>"bmp");
 $map->BlobToImage(decode_base64(<DATA>));
 $map->Crop(x=>0,y=>0,width=>$Opts{c},height=>1) if $Opts{c}<256;
-my @P = $map->GetPixels(geometry=>join("x",$map->Get("width","height")));
+my @P = $map->GetPixels(geometry=>join("x",$map->Get("width","height")),normalize=>1);
 for( my $i = 0; $i < scalar(@P); $i += 3 ){
-	$Map{sprintf "#%02x%02x%02x", map {int(255*$_/Image::Magick->QuantumRange)} @P[$i..$i+2]} = $i/3;
+	$Map{sprintf "#%02x%02x%02x", map {int(255*$_)} @P[$i..$i+2]} = $i/3;
 }
 
 # -------------------------------- #
@@ -68,10 +68,10 @@ $img->Resize(geometry=>2*$Opts{w}."x".$Opts{h}."!");
 $img->Quantize(colorspace=>'gray') if $Opts{g};
 $img->Remap(image=>$map,dither=>$Opts{d});
 ($W,$H) = $img->Get("width","height");
-my @P = $img->GetPixels(geometry=>$W."x".$H);
+my @P = $img->GetPixels(geometry=>$W."x".$H,normalize=>1);
 for( my $i = 0; $i < scalar(@P); $i += 3 ){
 	print "\e[0m\n" if $i/3 % $W == 0;
-	print "\e[48;5;".$Map{sprintf "#%02x%02x%02x", map {int(255*$_/Image::Magick->QuantumRange)} @P[$i..$i+2]}."m ";
+	print "\e[48;5;".$Map{sprintf "#%02x%02x%02x", map {int(255*$_)} @P[$i..$i+2]}."m ";
 }
 print "\e[0m\n";
 exit;
