@@ -68,7 +68,7 @@ $img->Resize(geometry=>2*$Opts{w}."x".$Opts{h}."!");
 $img->Quantize(colorspace=>'gray') if $Opts{g};
 $img->Remap(image=>$map,dither=>$Opts{d});
 ($W,$H) = $img->Get("width","height");
-my @P = $img->GetPixels(geometry=>$W."x".$H,normalize=>1);
+my @P = $img->GetPixels(geometry=>$W."x".$H,map=>"RGB",normalize=>1);
 for( my $i = 0; $i < scalar(@P); $i += 3 ){
 	print "\e[0m\n" if $i/3 % $W == 0;
 	print "\e[48;5;".$Map{sprintf "#%02x%02x%02x", map {int(255*$_)} @P[$i..$i+2]}."m ";
