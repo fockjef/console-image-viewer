@@ -8,25 +8,26 @@ use Getopt::Std;
 # -------------------------------- #
 # Version and Help Messages        #
 # -------------------------------- #
-$main::VERSION = "1.0.20170429";
+our $VERSION = "1.0.20180219";
 
-sub main::VERSION_MESSAGE{
-	print "CIV - Console Image Viewer v$main::VERSION\n";
+sub VERSION_MESSAGE{
+	print "CIV - Console Image Viewer v$VERSION\n";
 }
 
-sub main::HELP_MESSAGE{
+sub HELP_MESSAGE{
 	print <<'USAGE';
 
 Usage:
 	civ [-dg -c <N> -h <N> -h <N>] <file>
 
 Options:
-	-d       Dither image
-	-g       Greyscale image
-	-c <N>   Use N colors for output (typically 8,16, or 256)
-	-w <N>   Print at most N columns of output
-	-h <N>   Print at most N rows of output
+	-d         Dither image
+	-g         Greyscale image
+	-c <N>     Use N colors for output (typically 8,16, or 256)
+	-w <N>     Print at most N columns of output
+	-h <N>     Print at most N rows of output
 	--help
+	--version
 
 USAGE
 }
@@ -42,7 +43,7 @@ my %Opts = (
 	w => int(`tput cols`/2),
 	h => `tput lines`-1
 );
-exit main::HELP_MESSAGE() unless getopts('dgc:h:w:', \%Opts) && Image::Magick->new->Ping($ARGV[0]);
+exit HELP_MESSAGE() unless getopts('dgc:h:w:', \%Opts) && Image::Magick->new->Ping($ARGV[0]);
 
 # -------------------------------- #
 # Load console color map           #
