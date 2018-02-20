@@ -4,6 +4,7 @@ use strict;
 use Image::Magick;
 use MIME::Base64;
 use Getopt::Std;
+use Data::Dumper;
 
 # -------------------------------- #
 # Version and Help Messages        #
@@ -11,10 +12,11 @@ use Getopt::Std;
 our $VERSION = "1.0.20180219";
 
 sub VERSION_MESSAGE{
-	print "CIV - Console Image Viewer v$VERSION\n";
+	print "civ - console image viewer v$VERSION\n";
 }
 
 sub HELP_MESSAGE{
+	print join( ": ", @_), "\n" if @_;
 	print <<'USAGE';
 
 Usage:
@@ -43,7 +45,10 @@ my %Opts = (
 	w => int(`tput cols`/2),
 	h => `tput lines`-1
 );
-exit HELP_MESSAGE() unless getopts('dgc:h:w:', \%Opts) && Image::Magick->new->Ping($ARGV[0]);
+exit HELP_MESSAGE() unless getopts('dgc:h:w:', \%Opts);
+exit HELP_MESSAGE("No file specified") unless @ARGV;
+exit HELP_MESSAGE("File not found",$ARGV[0]) unless -e $ARGV[0];
+exit HELP_MESSAGE("Invalid image",$ARGV[0]) unless Image::Magick->new->Ping($ARGV[0]);
 
 # -------------------------------- #
 # Load console color map           #
